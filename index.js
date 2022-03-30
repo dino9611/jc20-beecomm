@@ -14,7 +14,11 @@ app.use(
 
 app.use(express.json());
 // klo corsnya "cors()" artinya allow semua ip
-app.use(cors());
+app.use(
+  cors({
+    exposedHeaders: ["x-access-token"],
+  })
+);
 // untuk membuat token masuk kedalam variable req.token
 
 //? parse form data berguna untuk upload file /

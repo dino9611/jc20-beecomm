@@ -1,6 +1,7 @@
 const { dbCon } = require("./../connection");
 // encrypsi by crypto nodejs
 const crypto = require("crypto");
+const { createJwtAccess } = require("../lib/jwt");
 
 const hashPass = (password) => {
   // puripuriprisoner adalah kunci untuk hashing
@@ -68,4 +69,61 @@ module.exports = {
     }
   },
   // login
+  // TODO:
+  // 1. login boleh pake username atau email
+  // 2. encript dulu passwordnya
+  // 3. get data user dengan username atau email dan password
+  // 4. kalo user ada maka kriim token access, sama data user
+  // 5. get data cartnya juga
+  login: async (req, res) => {
+    let { username, email, password } = req.body;
+    let conn, sql;
+    console.log(req.body);
+    try {
+      // create connection in pool
+      conn = await dbCon.promise().getConnection();
+      // hashing password
+      password = hashPass(password);
+
+      sql = `select * from users where (username = ? or email = ?) and password = ?`;
+      let [result] = await conn.query(sql, [username, email, password]);
+      console.log(result);
+      if (!result.length) {
+        // user tidak ditemukan
+        console.log("tes");
+        throw { message: "user tidak ditemukan" };
+      }
+      // buat token access
+      let dataToken = {
+        id: result[0].id,
+        username: result[0].username,
+        //role_id masukkan
+      };
+      let tokenAccess = createJwtAccess(dataToken);
+      // query cart
+
+      // lewatin dulu
+      conn.release();
+      // ngirim token by headers
+      res.set("x-access-token", tokenAccess);
+      return res.status(200).send(result[0]);
+    } catch (error) {
+      conn.release();
+      console.log(error);
+      return res.status(500).send({ message: error.message || error });
+    }
+  },
+  keeplogin: async (req, res) => {
+    const { id } = req.user;
+    let conn, sql;
+    try {
+      conn = await dbCon.promise();
+      sql = `select * from users where id = ?`;
+      let [result] = await conn.query(sql, [id]);
+      return res.status(200).send(result[0]);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({ message: error.message || error });
+    }
+  },
 };
