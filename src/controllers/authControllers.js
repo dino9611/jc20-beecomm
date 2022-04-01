@@ -56,7 +56,7 @@ module.exports = {
       //   req.body.password = hashPass(password)
       let [result1] = await conn.query(sql, insertData);
       // get data user lagi
-      sql = `select id,username,isVerified,email from users where id = ?`;
+      sql = `select id,username,isVerified,email,roles_id from users where id = ?`;
       let [userData] = await conn.query(sql, [result1.insertId]);
       //   buat token email verified dan token untuk aksees
       //   kirim email
@@ -85,7 +85,7 @@ module.exports = {
       // hashing password
       password = hashPass(password);
 
-      sql = `select * from users where (username = ? or email = ?) and password = ?`;
+      sql = `select id,username,isVerified,email,roles_id from users where (username = ? or email = ?) and password = ?`;
       let [result] = await conn.query(sql, [username, email, password]);
       console.log(result);
       if (!result.length) {
@@ -105,7 +105,7 @@ module.exports = {
       // lewatin dulu
       conn.release();
       // ngirim token by headers
-      res.set("x-access-token", tokenAccess);
+      res.set("x-token-access", tokenAccess);
       return res.status(200).send(result[0]);
     } catch (error) {
       conn.release();
